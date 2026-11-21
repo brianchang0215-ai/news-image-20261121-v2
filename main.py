@@ -1,9 +1,11 @@
-"""Draw the 21 November 2026 world-news image.
+"""Draw the 21 November 2026 world-news image, version 2.
 
 Standard library only. No network, no files read, no randomness:
 the same run always writes the same PNG bytes.
 Text is rendered with a small bitmap font defined below, so the
-image needs no font files and stays legible when scaled down.
+image needs no font files. Every story below was checked against
+news reported on 21 November 2026; items marked * happened on
+20 November and were reported on 21 November.
 """
 
 import os
@@ -25,7 +27,7 @@ TEAL = (0, 105, 95)
 GREY = (96, 102, 112)
 LIGHT = (228, 224, 212)
 SKY = (205, 224, 236)
-WATER = (120, 160, 190)
+GREEN = (110, 150, 90)
 
 # 5x7 bitmap font. Each glyph is 7 rows of 5 cells, "#" = on.
 FONT = {
@@ -78,6 +80,8 @@ FONT = {
     ")": ("01000", "00100", "00010", "00010", "00010", "00100", "01000"),
     "&": ("01100", "10010", "10100", "01000", "10101", "10010", "01101"),
     "|": ("00100", "00100", "00100", "00100", "00100", "00100", "00100"),
+    "*": ("00100", "10101", "01110", "10101", "00100", "00000", "00000"),
+    "$": ("00100", "01111", "10100", "01110", "00101", "11110", "00100"),
 }
 
 pix = bytearray(W * H * 3)
@@ -156,6 +160,10 @@ def draw_text_centered(cx, y, text, scale, color):
     draw_text(cx - text_width(text, scale) // 2, y, text, scale, color)
 
 
+def draw_text_right(rx, y, text, scale, color):
+    draw_text(rx - text_width(text, scale), y, text, scale, color)
+
+
 def card(x, y, w, h):
     rect(x, y, w, h, WHITE)
     rect(x, y, w, 3, NAVY)
@@ -164,100 +172,163 @@ def card(x, y, w, h):
     rect(x, y + h - 3, w, 3, NAVY)
 
 
-def kicker(x, y, text, color):
-    draw_text(x, y, text, 3, color)
+def hero(x, y, w, h, kicker, head1, head2, details, accent, art):
+    card(x, y, w, h)
+    rect(x, y, w, 6, accent)
+    draw_text(x + 14, y + 14, kicker, 2, accent)
+    draw_text(x + 14, y + 36, head1, 4, NAVY)
+    draw_text(x + 14, y + 68, head2, 4, NAVY)
+    yy = y + 100
+    for d in details:
+        draw_text(x + 14, yy, d, 2, INK)
+        yy += 17
+    art(x, y, w, h)
+
+
+def art_sun(x, y, w, h):
+    cx, cy = x + w - 40, y + 50
+    circle(cx, cy, 13, GOLD)
+    for dx, dy in ((-22, -12), (0, -22), (22, -12)):
+        line(cx, cy, cx + dx, cy + dy, GOLD, 3)
+
+
+def art_missile(x, y, w, h):
+    for i, (sx, sy) in enumerate(((0, 18), (20, 8), (40, 18))):
+        line(x + w - 88 + sx, y + h - 6, x + w - 88 + sx + 14, y + h - 6 - sy, RED, 3)
+        circle(x + w - 88 + sx + 14, y + h - 6 - sy, 3, RED)
+
+
+def art_waves(x, y, w, h):
+    for row in range(2):
+        yy = y + h - 12 + row * 6
+        for xx in range(x + 16, x + w - 40, 26):
+            line(xx, yy, xx + 13, yy, TEAL, 3)
+
+
+def medium(x, y, w, h, title, detail, region, accent):
+    card(x, y, w, h)
+    rect(x, y, 6, h, accent)
+    draw_text(x + 16, y + 5, title, 3, NAVY)
+    draw_text_right(x + w - 12, y + 7, region, 2, GREY)
+    draw_text(x + 16, y + 28, detail, 2, INK)
 
 
 def main():
     rect(0, 0, W, H, PAPER)
 
-    # Masthead.
-    rect(0, 0, W, 112, NAVY)
-    draw_text_centered(W // 2, 24, "WORLD NEWS", 7, WHITE)
-    rect(0, 112, W, 46, GOLD)
-    draw_text_centered(W // 2, 126, "SATURDAY 21 NOVEMBER 2026", 3, NAVY)
-
-    # Hero: Ukraine / Poland. Text on the left, picture on the right:
-    # the bridge must never sit under the text.
-    card(32, 172, 960, 320)
-    rect(540, 188, 424, 288, SKY)
-    # Bridge: deck, towers, cables, water, inside the right column only.
-    rect(556, 372, 392, 14, NAVY)
-    rect(624, 268, 18, 118, NAVY)
-    rect(864, 268, 18, 118, NAVY)
-    line(633, 268, 556, 372, NAVY, 3)
-    line(633, 268, 756, 372, NAVY, 3)
-    line(873, 268, 756, 372, NAVY, 3)
-    line(873, 268, 948, 372, NAVY, 3)
-    for wx in range(556, 948, 28):
-        line(wx, 420, wx + 14, 420, WATER, 3)
-        line(wx + 6, 444, wx + 20, 444, WATER, 3)
-    circle(908, 246, 26, GREY)
-    circle(932, 226, 18, GREY)
-    circle(908, 246, 10, RED)
-    kicker(52, 196, "UKRAINE - POLAND", RED)
-    draw_text(52, 228, "KYIV BRIDGES", 5, NAVY)
-    draw_text(52, 268, "HIT", 5, NAVY)
-    draw_text(52, 326, "OVERNIGHT STRIKES", 3, INK)
-    draw_text(52, 352, "KRYVYI RIH: 2 KILLED,", 3, INK)
-    draw_text(52, 378, "83 INJURED", 3, INK)
-    draw_text(52, 404, "MISSILES REPORTED", 3, INK)
-    draw_text(52, 430, "IN POLAND", 3, INK)
-
-    # Middle left: markets.
-    card(32, 508, 472, 236)
-    kicker(52, 524, "MARKETS", RED)
-    draw_text(52, 550, "WALL STREET", 4, NAVY)
-    draw_text(52, 578, "FALLS", 4, NAVY)
-    draw_text(52, 618, "S&P 500 -3.7%", 3, INK)
-    draw_text(52, 644, "NASDAQ -5.3%", 3, INK)
-    draw_text(52, 670, "INTO CORRECTION", 3, INK)
-    # Falling chart.
-    line(330, 620, 372, 640, RED, 4)
-    line(372, 640, 414, 668, RED, 4)
-    line(414, 668, 458, 706, RED, 4)
-    line(330, 706, 458, 706, GREY, 2)
-
-    # Middle right: climate.
-    card(520, 508, 472, 236)
-    kicker(540, 524, "CLIMATE", TEAL)
-    draw_text(540, 550, "COP31 IN", 4, NAVY)
-    draw_text(540, 578, "OVERTIME", 4, NAVY)
-    draw_text(540, 618, "DRAFT DROPS", 3, INK)
-    draw_text(540, 644, "FOSSIL FUELS", 3, INK)
-    draw_text(540, 670, "ANTALYA, TURKIYE", 3, INK)
-    circle(916, 650, 30, GOLD)
-    for dx, dy in ((-44, -30), (0, -48), (44, -30), (-52, 6), (52, 6)):
-        line(916, 650, 916 + dx, 650 + dy, GOLD, 4)
-
-    # Bottom left: quake.
-    card(32, 760, 472, 176)
-    kicker(52, 774, "EARTHQUAKE", TEAL)
-    draw_text(52, 800, "M6.8 QUAKE", 4, NAVY)
-    draw_text(52, 840, "BANDA SEA", 3, INK)
-    draw_text(52, 866, "NEAR TIMOR-LESTE", 3, INK)
-    ring(432, 848, 52, RED, 4)
-    ring(432, 848, 36, RED, 4)
-    ring(432, 848, 20, RED, 4)
-    circle(432, 848, 7, RED)
-
-    # Bottom right: Iraq fire.
-    card(520, 760, 472, 176)
-    kicker(540, 774, "IRAQ", RED)
-    draw_text(540, 800, "BASRA FIRE", 4, NAVY)
-    draw_text(540, 840, "4 KILLED, 30 HURT", 3, INK)
-    draw_text(540, 866, "POWER STATION", 3, INK)
-    # Flame: outer and inner triangles made of stacked bars.
-    for i, half in enumerate((6, 12, 18, 22, 24, 22, 18, 12)):
-        rect(916 - half, 806 + i * 9, half * 2, 9, ORANGE)
-    for i, half in enumerate((3, 6, 9, 10, 9, 6)):
-        rect(916 - half, 830 + i * 9, half * 2, 9, RED)
-
-    # Footer ticker.
-    rect(0, 952, W, 72, NAVY)
+    # Top strip + date masthead.
+    rect(0, 0, W, 30, NAVY)
+    draw_text_centered(W // 2, 8, "THE WORLD IN ONE DAY", 2, WHITE)
+    draw_text_centered(W // 2, 42, "SATURDAY 21 NOVEMBER 2026", 6, NAVY)
     draw_text_centered(
-        W // 2, 978,
-        "IRAN SEEKS TALKS - US: TERMS UNACCEPTABLE  |  SPAIN EXTENDS BANK TAX",
+        W // 2, 96,
+        "COP31 OVERTIME - MISSILES OVER RIYADH - QUAKE IN PERU", 2, INK,
+    )
+    rect(0, 118, W, 4, RED)
+
+    # Number strip: six verified figures.
+    numbers = [
+        ("200", "AT COP31"),
+        ("3", "OVER RIYADH"),
+        ("6.7", "PERU QUAKE"),
+        ("146", "DAVAO SAFE"),
+        ("-3.7%", "S&P 500"),
+        ("M6.8", "BANDA SEA"),
+    ]
+    for i, (num, label) in enumerate(numbers):
+        bx = 32 + i * 160
+        card(bx, 124, 152, 54)
+        draw_text_centered(bx + 76, 131, num, 4, RED)
+        draw_text_centered(bx + 76, 161, label, 2, NAVY)
+
+    # Three hero stories.
+    hero(32, 186, 304, 168, "GLOBAL - CLIMATE", "COP31 IN", "OVERTIME",
+         ["DRAFT OMITS FOSSIL FUELS", "NEARLY 200 NATIONS", "ANTALYA, TURKIYE"],
+         TEAL, art_sun)
+    hero(360, 186, 304, 168, "MIDDLE EAST", "3 MISSILES", "DOWNED",
+         ["OVER RIYADH", "EARLY SATURDAY", "ALERT AT 01:53"],
+         RED, art_missile)
+    hero(688, 186, 304, 168, "EUROPE - WAR", "UKRAINE", "NIGHT RAID",
+         ["KRYVYI RIH: 2 KILLED", "83 INJURED IN UKRAINE", "POLAND: MISSILES *"],
+         RED, art_waves)
+
+    # Ten medium stories, two columns.
+    rows = [
+        ("PERU QUAKE", "M6.7 - NO DEATHS - 00:09 GMT", "AMERICAS", TEAL),
+        ("BANDA SEA QUAKE", "226 KM NE OF DILI - FELT IN DARWIN", "OCEANIA", TEAL),
+        ("BASRA FIRE", "AT LEAST 4 KILLED, 30-35 HURT", "MIDDLE EAST", RED),
+        ("WALL STREET FALLS", "S&P -3.7% - NASDAQ -5.3%", "AMERICAS", RED),
+        ("BITCOIN SLIDES", "BELOW $59,000 - LOWEST SINCE JULY", "GLOBAL", GOLD),
+        ("NVIDIA SLIDES", "-14% - SEC PROBE REPORTED", "AMERICAS", RED),
+        ("GENEVA: ROBOT ARMS", "RULES BY 2028 - NO BINDING DEAL", "EUROPE", NAVY),
+        ("HORMUZ TANKERS", "IRAN CLAIMS DRONE DOWNED", "MIDDLE EAST", ORANGE),
+        ("DAVAO LANDING", "146 ABOARD ALL SAFE", "ASIA", TEAL),
+        ("SEJONG DERAILMENT", "5 CARS OFF - NO INJURIES", "ASIA", GREY),
+    ]
+    for i, (title, detail, region, accent) in enumerate(rows):
+        col = i % 2
+        row_i = i // 2
+        mx = 32 + col * 488
+        my = 362 + row_i * 46
+        medium(mx, my, 472, 44, title, detail, region, accent)
+
+    # Bottom left: region counts + schematic map note.
+    card(32, 592, 288, 354)
+    draw_text(48, 606, "WHERE IT HAPPENED", 2, RED)
+    rect(48, 628, 256, 110, SKY)
+    rect(64, 656, 52, 34, GREEN)
+    rect(132, 646, 70, 44, GREEN)
+    rect(214, 664, 40, 30, GREEN)
+    rect(96, 696, 36, 26, GREEN)
+    circle(176, 668, 5, RED)
+    circle(88, 672, 5, RED)
+    circle(232, 678, 5, RED)
+    draw_text(48, 746, "SCHEMATIC MAP", 2, GREY)
+    counts = [
+        ("EUROPE", "7"), ("ASIA", "5"), ("MIDDLE EAST", "5"),
+        ("AFRICA", "3"), ("AMERICAS", "6"), ("OCEANIA", "2"),
+        ("GLOBAL", "2"), ("TOTAL", "30"),
+    ]
+    yy = 772
+    for name, num in counts:
+        draw_text(48, yy, name, 2, INK)
+        draw_text_right(304, yy, num, 2, NAVY)
+        yy += 19
+
+    # Bottom right: 17 more stories reported on 21 November.
+    card(336, 592, 656, 354)
+    draw_text(352, 606, "ALSO REPORTED 21 NOVEMBER 2026", 3, NAVY)
+    rect(352, 632, 624, 3, RED)
+    more = [
+        "POLAND: MISSILES REPORTED, NO INJURIES *",
+        "KYIV BRIDGES DAMAGED IN STRIKES *",
+        "SPAIN TO EXTEND BANK TAX TO 2027",
+        "ITALY CLEARS TESLA DRIVER ASSIST",
+        "PARIS PROTEST PLANNED, 70,000 POLICE",
+        "ASIA SHARES FALL: NIKKEI -5.1%",
+        "ANTHROPIC SHARES -8.5% AFTER IPO",
+        "TRUMP THREATENS DATA-CENTRE TAX",
+        "F1: VERSTAPPEN ON POLE IN VEGAS *",
+        "U17: MOROCCO 6-0, MALI 3-0 *",
+        "AFLW: NORTH MELBOURNE REACH FINAL",
+        "SOMALIA EXPELS UAE ENVOY, 72 HOURS *",
+        "NIGERIA BOAT: POLICE SAY 4 DEAD *",
+        "GAZA STRIKE KILLS 3, WAFA SAYS",
+        "IRAN OPEN TO FAIR URANIUM DEAL",
+        "AUSTRALIA, CHINA AGREE AI TALKS *",
+        "CHINA PRESSES JAPAN OVER TAIWAN *",
+    ]
+    yy = 644
+    for item in more:
+        draw_text(352, yy, item, 2, INK)
+        yy += 17
+
+    # Footer: date check.
+    rect(0, 954, W, 70, NAVY)
+    draw_text_centered(W // 2, 968, "DATE CHECK: ALL STORIES REPORTED 21 NOV 2026", 2, WHITE)
+    draw_text_centered(
+        W // 2, 992,
+        "* = EVENT ON 20 NOV, REPORTED 21 NOV - SOURCES: REUTERS, AP, AFP, AL JAZEERA",
         2, WHITE,
     )
 
